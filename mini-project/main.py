@@ -177,7 +177,7 @@ figures = "./figures"
 mkdir(figures)
 
 # Convert out input sample to freq domain
-time_input_signal = [input_signal(n) for n in range(N*2)]
+time_input_signal = [input_signal(n) for n in range(N*2-1)]
 freq_input_signal = fft(time_input_signal) / (N*2)
 
 for window, window_name in windows:
@@ -205,8 +205,8 @@ for window, window_name in windows:
         low = _find_magnitude_at_angular_frequency(stopband_angular_frequency,
                                                    w, h)
         # Because we only calculate for [0,pi] we need to add [-pi,0]
-        fixed_w = list([-q for q in w[::-1]]) + list(w)
-        fixed_h = list(h[::-1]) + list(h)
+        fixed_w = list([-q for q in w[1:][::-1]]) + list(w)
+        fixed_h = list(h[1:][::-1]) + list(h)
 
         # Påtryk vores signal via vores overføringsfunktion
         freq_output_signal = [a*b for a, b in zip(freq_input_signal, fixed_h)]
