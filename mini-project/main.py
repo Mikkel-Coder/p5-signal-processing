@@ -26,13 +26,16 @@ MIN_L: int = 10
 # sample resolution
 N = 5120
 
+# To fix bug
+L = 0
+
 angular_frequencies = [ # Discrete [radians/sample]
     pi/80,
     3*pi/4,
 ]
 
 sample_frequencies = [ # [Hz]
-    1,
+    10,
     100,
     1000,
 ]
@@ -126,7 +129,9 @@ def _plot_freq(w: list[float], h: list[complex128],
 
     # General plot configuring
     ax.plot(w, abs(h), color="blue")
-    ax.set_title(f"{label}: (Frequency) {window_name} Window size {L}")
+    title = ""
+    if window_name != "": title = f"{window_name} Window size {L}"
+    ax.set_title(f"{label}: (Frequency) {title}")
     ax.set_xlabel("Discrete Angular Frequency [Radians/Sample]")
     ax.set_ylabel("Magnitude")
     ax.set_xticks(freq_xaxis_ticks, freq_xaxis_labels)
@@ -199,11 +204,13 @@ def _plot_time_index(vals: list[complex128], window_name: str,
     if(res > N):
         raise Exception("Too high resolution")
 
-    x = linspace(0., 100., res)
+    x = linspace(0., res, res)
     fig, ax = plt.subplots()
 
     ax.plot(x, real(vals[:res]), color="blue")
-    ax.set_title(f"{label}: (Discrete Time) {window_name} Window size {L}")
+    title = ""
+    if window_name != "": title = f"{window_name} Window size {L}"
+    ax.set_title(f"{label}: (Discrete Time) {title}")
     ax.set_xlabel("Time Index [n]")
     ax.set_ylabel("Magnitude")
 
@@ -226,7 +233,9 @@ def _plot_time_real(vals: list[complex128], window_name: str,
     fig, ax = plt.subplots()
 
     ax.plot(x, real(vals[:res]), color="blue")
-    ax.set_title(f"{label}: (Time, fs: {fs}) {window_name} Window size {L}")
+    title = ""
+    if window_name != "": title = f"{window_name} Window size {L}"
+    ax.set_title(f"{label}: (Time, fs: {fs}) {title}")
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Magnitude")
 
@@ -304,45 +313,62 @@ windows = [
 
 figures = "./figures"
 mkdir(figures)
+input_path = figures + "/input"
+mkdir(input_path)
+
+input_freq_path = input_path + "/freq"
+input_time_path = input_path + "/time"
+input_time_index_path = input_time_path + "/index"
+input_time_real_path = input_time_path + "/real"
+mkdir(input_freq_path)
+mkdir(input_time_path)
+mkdir(input_time_index_path)
+mkdir(input_time_real_path)
+for fs in sample_frequencies:
+    mkdir(input_time_real_path + f"/{fs}")
 
 # Convert out input sample to freq domain
 time_input_signal = [input_signal(n) for n in range(N)]
 freq_input_signal = fft(time_input_signal) / (N)
 
+
+_plot_freq(linspace(0., 2*pi, N), freq_input_signal, "", input_freq_path,
+           "Input")
+_plot_time_index(time_input_signal, "", input_time_index_path, N//10,
+           "Input")
+for fs in sample_frequencies:
+    _plot_time_real(time_input_signal, "", input_time_real_path, 5, fs,
+               "Input")
+
+
 for window, window_name in windows:
-    fig_save_location = f"{figures}/{window_name}"
-    mkdir(fig_save_location)
-    fun_path = fig_save_location + "/fun"
-    phase_path = fig_save_location + "/phase"
-    phase_transferfunction_path = phase_path + "/transferfunction"
-    freq_path = fig_save_location + "/freq"
-    freq_input_path = freq_path + "/input"
-    freq_transferfunction_path = freq_path + "/transferfunction"
-    freq_output_path = freq_path + "/output"
-    time_path = fig_save_location + "/time"
-    time_index_path = time_path + "/index"
-    time_index_input_path = time_index_path + "/input"
-    time_index_output_path = time_index_path + "/output"
-    time_real_path = time_path + "/real"
-    time_real_input_path = time_real_path + "/input"
-    time_real_output_path = time_real_path + "/output"
-    mkdir(fun_path)
-    mkdir(phase_path)
-    mkdir(phase_transferfunction_path)
-    mkdir(freq_path)
-    mkdir(freq_input_path)
-    mkdir(freq_transferfunction_path)
-    mkdir(freq_output_path)
-    mkdir(time_path)
-    mkdir(time_index_path)
-    mkdir(time_index_input_path)
-    mkdir(time_index_output_path)
-    mkdir(time_real_path)
-    mkdir(time_real_input_path)
-    mkdir(time_real_output_path)
+    window_path = f"{figures}/{window_name}"
+    mkdir(window_path)
+
+    window_fun_path = window_path + "/fun"
+    window_phase_path = window_path + "/phase"
+    window_phase_transferfunction_path = window_phase_path + "/transferfunction"
+    window_freq_path = window_path + "/freq"
+    window_freq_transferfunction_path = window_freq_path + "/transferfunction"
+    window_freq_output_path = window_freq_path + "/output"
+    window_time_path = window_path + "/time"
+    window_time_index_path = window_time_path + "/index"
+    window_time_index_output_path = window_time_index_path + "/output"
+    window_time_real_path = window_time_path + "/real"
+    window_time_real_output_path = window_time_real_path + "/output"
+    mkdir(window_fun_path)
+    mkdir(window_phase_path)
+    mkdir(window_phase_transferfunction_path)
+    mkdir(window_freq_path)
+    mkdir(window_freq_transferfunction_path)
+    mkdir(window_freq_output_path)
+    mkdir(window_time_path)
+    mkdir(window_time_index_path)
+    mkdir(window_time_index_output_path)
+    mkdir(window_time_real_path)
+    mkdir(window_time_real_output_path)
     for fs in sample_frequencies:
-        mkdir(time_real_input_path + f"/{fs}")
-        mkdir(time_real_output_path + f"/{fs}")
+        mkdir(window_time_real_output_path + f"/{fs}")
 
     for L in range(MIN_L, MAX_L+1, 2):
         filter_coefficients = []
@@ -366,20 +392,14 @@ for window, window_name in windows:
             # Find timedomain of output
             time_output_signal = ifft(freq_output_signal) * (N)
 
-            _plot_fun(w, h, window_name, fun_path, "Filter")
-            _plot_phase(w, h, window_name, phase_transferfunction_path, "Filter")
-            _plot_freq(w, freq_input_signal, window_name, freq_input_path,
-                       "Input")
-            _plot_freq(w, h, window_name, freq_transferfunction_path,
+            _plot_fun(w, h, window_name, window_fun_path, "Filter")
+            _plot_phase(w, h, window_name, window_phase_transferfunction_path, "Filter")
+            _plot_freq(w, h, window_name, window_freq_transferfunction_path,
                        "Filter", lines=True)
-            _plot_freq(w, freq_output_signal, window_name, freq_output_path,
+            _plot_freq(w, freq_output_signal, window_name, window_freq_output_path,
                        "Output")
-            _plot_time_index(time_input_signal, window_name, time_index_input_path, N//10,
-                       "Input")
-            _plot_time_index(time_output_signal, window_name, time_index_output_path, N//10,
+            _plot_time_index(time_output_signal, window_name, window_time_index_output_path, N//10,
                        "Output")
             for fs in sample_frequencies:
-                _plot_time_real(time_input_signal, window_name, time_real_input_path, 5, fs,
-                           "Input")
-                _plot_time_real(time_output_signal, window_name, time_real_output_path, 5, fs,
+                _plot_time_real(time_output_signal, window_name, window_time_real_output_path, 5, fs,
                            "Output")
