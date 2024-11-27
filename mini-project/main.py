@@ -76,11 +76,27 @@ def _find_magnitude_at_angular_frequency(
         previous_angular_frequency = current_angular_frequency
         previous_magnitude = current_magnitude
 
+def _plot_fun(w: list[float], h: list[complex128],
+              window_name: str, path: str, label: str) -> None:
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+
+    ax.plot(w, abs(real(h)), imag(h), color="red")
+    ax.set_title(f"{label}: (FUN) {window_name} Window size {L}")
+    ax.set_xlabel("Angular Frequency")
+    ax.set_ylabel("Magnitude")
+    ax.set_zlabel("Phase")
+
+    fig.savefig(f"{path}/{L}.png")
+    plt.close(fig)
+
+    
+
 def _plot_phase(w: list[float], h: list[complex128],
                 window_name: str, path: str, label: str) -> None:
     fig, ax = plt.subplots()
 
-    ax.plot(w, imag(h), color="blue")
+    ax.plot(w, h, color="blue")
     ax.set_title(f"{label}: (Phase) {window_name} Window size {L}")
     ax.set_xlabel("Angular Frequency")
     ax.set_ylabel("Phase")
@@ -99,7 +115,7 @@ def _plot_freq(w: list[float], h: list[complex128],
     fig, ax = plt.subplots()
 
     # General plot configuring
-    ax.plot(w, real(h), color="blue")
+    ax.plot(w, abs(h), color="blue")
     ax.set_title(f"{label}: (Frequency) {window_name} Window size {L}")
     ax.set_xlabel("Angular Frequency")
     ax.set_ylabel("Magnitude")
@@ -214,6 +230,7 @@ freq_input_signal = fft(time_input_signal) / (N)
 for window, window_name in windows:
     fig_save_location = f"{figures}/{window_name}"
     mkdir(fig_save_location)
+    fun_path = fig_save_location + "/fun"
     phase_path = fig_save_location + "/phase"
     # phase_input_path = phase_path + "/input"
     phase_transferfunction_path = phase_path + "/transferfunction"
@@ -225,6 +242,7 @@ for window, window_name in windows:
     time_path = fig_save_location + "/time"
     time_input_path = time_path + "/input"
     time_output_path = time_path + "/output"
+    mkdir(fun_path)
     mkdir(phase_path)
     # mkdir(phase_input_path)
     mkdir(phase_transferfunction_path)
@@ -259,7 +277,8 @@ for window, window_name in windows:
             # Find timedomain of output
             time_output_signal = ifft(freq_output_signal) * (N)
 
-            _plot_phase(w, h, window_name, phase_transferfunction_path, "Filter")
+            _plot_fun(w, h, window_name, fun_path, "Filter")
+            _plot_phase(w, imag(h), window_name, phase_transferfunction_path, "Filter")
             # _plot_phase(w, freq_output_signal, window_name, phase_output_path, "Output")
             # _plot_phase(w, freq_input_signal, window_name, phase_input_path, "Input")
             _plot_freq(w, freq_input_signal, window_name, freq_input_path,
