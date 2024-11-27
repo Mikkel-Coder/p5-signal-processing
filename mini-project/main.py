@@ -72,13 +72,13 @@ def _find_magnitude_at_angular_frequency(
 
 
 def _plot_freq(w: list[float], h: list[complex128],
-               window_name: str, path: str) -> None:
+               window_name: str, path: str, label: str) -> None:
     """This function is not important. It is only used for plotting
     and saving the plot as a png file."""
     fig, ax = plt.subplots()
 
     # General plot configuring
-    ax.plot(w, abs(h), color="blue", label="Angular Frequency Response")
+    ax.plot(w, abs(h), color="blue", label=label)
     ax.set_title(f"LP-FIR filter using {window_name} Window with size L: {L}")
     ax.set_xlabel("Angular Frequency")
     ax.set_ylabel("Magnitude")
@@ -177,8 +177,8 @@ figures = "./figures"
 mkdir(figures)
 
 # Convert out input sample to freq domain
-time_input_signal = [input_signal(n) for n in range(N*2-1)]
-freq_input_signal = fft(time_input_signal) / (N*2)
+time_input_signal = [input_signal(n) for n in range(N)]
+freq_input_signal = fft(time_input_signal) / (N)
 
 for window, window_name in windows:
     fig_save_location = f"{figures}/{window_name}"
@@ -199,22 +199,20 @@ for window, window_name in windows:
 
         # w: total number points (aka resolution)
         # h: Complex frequency response
-        w, h = signal.freqz(b=filter_coefficients, a=1, worN=N)
+        w, h = signal.freqz(b=filter_coefficients, a=1, worN=N, whole=True)
         high = _find_magnitude_at_angular_frequency(passband_angular_frequency,
                                                     w, h)
         low = _find_magnitude_at_angular_frequency(stopband_angular_frequency,
                                                    w, h)
-        # Because we only calculate for [0,pi] we need to add [-pi,0]
-        fixed_w = list([-q for q in w[1:][::-1]]) + list(w)
-        fixed_h = list(h[1:][::-1]) + list(h)
 
         # Påtryk vores signal via vores overføringsfunktion
-        freq_output_signal = [a*b for a, b in zip(freq_input_signal, fixed_h)]
+        freq_output_signal = [a*b for a, b in zip(freq_input_signal, h)]
 
         if high > passband_magnitude and low < stopband_magnitude:
             print(f"[{window_name=}] We found a good value for L: {L}")
-            _plot_freq(fixed_w, freq_input_signal,
-                       window_name, freq_input_path)
-            _plot_freq(w, h, window_name, freq_transferfunction_path)
-            _plot_freq(fixed_w, freq_output_signal,
-                       window_name, freq_output_path)
+            _plot_freq(w, freq_input_signal,
+                       window_name, freq_input_path, "Input frequencies")
+            _plot_freq(w, h, window_name, freq_transferfunction_path,
+                       "Angular Frequency Response")
+            _plot_freq(w, freq_output_signal,
+                       window_name, freq_output_path, "Filter output frequencies")
