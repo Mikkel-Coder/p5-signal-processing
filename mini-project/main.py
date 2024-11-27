@@ -1,7 +1,7 @@
 from typing import Callable
 from scipy import signal
 from math import pi, sin, cos
-from numpy import abs, float64, complex128, linspace
+from numpy import abs, float64, complex128, linspace, real, imag
 from numpy.fft import fft, ifft
 from os import mkdir
 import matplotlib.pyplot as plt
@@ -20,15 +20,25 @@ stopband_magnitude: float = 10**(-1/2)
 # The range of the size of our window function.
 # We exclude smaller values of less than 10 because,
 # then the DC in the SINC function becomes to "weighted"
-MAX_L: int = 100
+MAX_L: int = 50
 MIN_L: int = 10
 
 # sample resolution
 N = 5120
 
+angular_frequencies = [
+    pi/80,
+    3*pi/4
+]
+
 # Our input signal
 def input_signal(n: int):
-    return cos((pi/8)*n)+cos((3*pi/4)*n)
+    out: int = 0
+
+    for freq in angular_frequencies:
+        out += cos(freq*n)
+
+    return out
 
 
 def _find_magnitude_at_angular_frequency(
@@ -66,6 +76,21 @@ def _find_magnitude_at_angular_frequency(
         previous_angular_frequency = current_angular_frequency
         previous_magnitude = current_magnitude
 
+def _plot_phase(w: list[float], h: list[complex128],
+                window_name: str, path: str, label: str) -> None:
+    fig, ax = plt.subplots()
+
+    ax.plot(w, imag(h), color="blue")
+    ax.set_title(f"{label}: (Phase) {window_name} Window size {L}")
+    ax.set_xlabel("Angular Frequency")
+    ax.set_ylabel("Phase")
+
+    ax.xaxis.labelpad = 20
+    ax.yaxis.labelpad = 20
+
+    fig.tight_layout()
+    fig.savefig(f"{path}/{L}.png")
+    plt.close(fig)
 
 def _plot_freq(w: list[float], h: list[complex128],
                window_name: str, path: str, label: str) -> None:
@@ -74,10 +99,11 @@ def _plot_freq(w: list[float], h: list[complex128],
     fig, ax = plt.subplots()
 
     # General plot configuring
-    ax.plot(w, abs(h), color="blue")
-    ax.set_title(f"LP-FIR filter using {window_name} Window with size L: {L} ({label} in frequency)")
+    ax.plot(w, real(h), color="blue")
+    ax.set_title(f"{label}: (Frequency) {window_name} Window size {L}")
     ax.set_xlabel("Angular Frequency")
     ax.set_ylabel("Magnitude")
+    
 
     # Add some padding so that we can see the text
     ax.xaxis.labelpad = 20
@@ -88,8 +114,8 @@ def _plot_freq(w: list[float], h: list[complex128],
     fig.savefig(f"{path}/{L}.png")
     plt.close(fig)
 
-def _plot_time(vals: list[complex128], window_name: str, path: str, res: int, label: str):
-    """Please make this work later"""
+def _plot_time(vals: list[complex128], window_name: str,
+               path: str, res: int, label: str) -> None:
     # Convert from frequency domain to time domain
     # We do that by using inverse DFT (by we use the optimized IDFT, IFFT)
 
@@ -99,8 +125,8 @@ def _plot_time(vals: list[complex128], window_name: str, path: str, res: int, la
     x = linspace(0., 100., res)
     fig, ax = plt.subplots()
 
-    ax.plot(x, abs(vals[:res]), color="blue")
-    ax.set_title(f"LP-FIR filter using {window_name} Window with size L: {L} ({label} in time)")
+    ax.plot(x, real(vals[:res]), color="blue")
+    ax.set_title(f"{label}: (Time) {window_name} Window size {L}")
     ax.set_xlabel("Time")
     ax.set_ylabel("Magnitude")
 
@@ -188,6 +214,10 @@ freq_input_signal = fft(time_input_signal) / (N)
 for window, window_name in windows:
     fig_save_location = f"{figures}/{window_name}"
     mkdir(fig_save_location)
+    phase_path = fig_save_location + "/phase"
+    # phase_input_path = phase_path + "/input"
+    phase_transferfunction_path = phase_path + "/transferfunction"
+    # phase_output_path = phase_path + "/output"
     freq_path = fig_save_location + "/freq"
     freq_input_path = freq_path + "/input"
     freq_transferfunction_path = freq_path + "/transferfunction"
@@ -195,6 +225,10 @@ for window, window_name in windows:
     time_path = fig_save_location + "/time"
     time_input_path = time_path + "/input"
     time_output_path = time_path + "/output"
+    mkdir(phase_path)
+    # mkdir(phase_input_path)
+    mkdir(phase_transferfunction_path)
+    # mkdir(phase_output_path)
     mkdir(freq_path)
     mkdir(freq_input_path)
     mkdir(freq_transferfunction_path)
@@ -223,15 +257,18 @@ for window, window_name in windows:
             freq_output_signal = [a*b for a, b in zip(freq_input_signal, h)]
 
             # Find timedomain of output
-            time_output_signal = ifft(freq_output_signal)
+            time_output_signal = ifft(freq_output_signal) * (N)
 
+            _plot_phase(w, h, window_name, phase_transferfunction_path, "Filter")
+            # _plot_phase(w, freq_output_signal, window_name, phase_output_path, "Output")
+            # _plot_phase(w, freq_input_signal, window_name, phase_input_path, "Input")
             _plot_freq(w, freq_input_signal, window_name, freq_input_path,
                        "Input")
             _plot_freq(w, h, window_name, freq_transferfunction_path,
                        "Filter")
             _plot_freq(w, freq_output_signal, window_name, freq_output_path,
                        "Output")
-            _plot_time(time_input_signal, window_name, time_input_path, N//100,
+            _plot_time(time_input_signal, window_name, time_input_path, N//10,
                        "Input")
-            _plot_time(time_output_signal, window_name, time_output_path, N//100,
+            _plot_time(time_output_signal, window_name, time_output_path, N//10,
                        "Output")
