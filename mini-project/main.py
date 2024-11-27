@@ -5,7 +5,7 @@ from numpy import abs, angle, float64, complex128, linspace, real
 from numpy.fft import fft, ifft
 from os import mkdir
 import matplotlib.pyplot as plt
-# import matplotlib.patches as patches
+import matplotlib.patches as patches
 
 # Our know angular frequencies
 cutoff_angular_frequency: float = pi/4
@@ -87,10 +87,10 @@ def _plot_fun(w: list[float], h: list[complex128],
 
     ax.plot(w, abs(h), angle(h), color="red")
     ax.set_title(f"{label}: (FUN) {window_name} Window size {L}")
-    ax.set_xlabel("Angular Frequency")
+    ax.set_xlabel("Discrete Angular Frequency [Radians/Samples]")
     ax.set_ylabel("Magnitude")
-    ax.set_zlabel("Phase")
-    ax.set_xticks(freq_xaxis_ticks, freq_xaxis_labels)
+    ax.set_zlabel("Phase [Radians]")
+    ax.set_xticks(freq_xaxis_ticks[::2], freq_xaxis_labels[::2])
 
     fig.savefig(f"{path}/{L}.png")
     plt.close(fig)
@@ -101,8 +101,8 @@ def _plot_phase(w: list[float], h: list[complex128],
 
     ax.plot(w, angle(h), color="blue")
     ax.set_title(f"{label}: (Phase) {window_name} Window size {L}")
-    ax.set_xlabel("Angular Frequency")
-    ax.set_ylabel("Phase")
+    ax.set_xlabel("Discrete Angular Frequency [Radians/Samples]")
+    ax.set_ylabel("Phase [Radians]")
     ax.set_xticks(freq_xaxis_ticks, freq_xaxis_labels)
 
     ax.xaxis.labelpad = 20
@@ -113,7 +113,7 @@ def _plot_phase(w: list[float], h: list[complex128],
     plt.close(fig)
 
 def _plot_freq(w: list[float], h: list[complex128],
-               window_name: str, path: str, label: str) -> None:
+               window_name: str, path: str, label: str, lines: bool = False) -> None:
     """This function is not important. It is only used for plotting
     and saving the plot as a png file."""
     fig, ax = plt.subplots()
@@ -121,9 +121,61 @@ def _plot_freq(w: list[float], h: list[complex128],
     # General plot configuring
     ax.plot(w, abs(h), color="blue")
     ax.set_title(f"{label}: (Frequency) {window_name} Window size {L}")
-    ax.set_xlabel("Angular Frequency")
+    ax.set_xlabel("Discrete Angular Frequency [Radians/Samples]")
     ax.set_ylabel("Magnitude")
     ax.set_xticks(freq_xaxis_ticks, freq_xaxis_labels)
+
+    if lines:
+        # lines and stuff
+        # x
+        ax.axvline(cutoff_angular_frequency, linestyle="-.", color="grey", label="Ideal Frequency Cutoff")
+        ax.axvline(passband_angular_frequency, linestyle="dashed", color="green", label="Frequency Passband")
+        ax.axvline(stopband_angular_frequency, linestyle="dashed", color="red", label="Frequency Stopband")
+        
+        # y
+        ax.axhline(passband_magnitude, linestyle="dotted", color="green", label="Magnitude Passband")
+        ax.axhline(stopband_magnitude, linestyle="dotted", color="red", label="Magnitude Stopband")
+
+        # neg x
+        ax.axvline(2*pi - cutoff_angular_frequency, linestyle="-.", color="grey", label="Ideal Frequency Cutoff")
+        ax.axvline(2*pi - passband_angular_frequency, linestyle="dashed", color="green", label="Frequency Passband")
+        ax.axvline(2*pi - stopband_angular_frequency, linestyle="dashed", color="red", label="Frequency Stopband")
+
+        # Add text to each line 
+        # x axis
+        ax.text(passband_angular_frequency, -0.15, f"{passband_angular_frequency:.2f}π", color='green', fontsize=7, ha='center', va='center')
+        ax.text(stopband_angular_frequency, -0.15, f"{stopband_angular_frequency:.2f}π", color='red', fontsize=7, ha='center', va='center')
+
+        # Negative version
+        ax.text(2*pi - passband_angular_frequency, -0.15, f"{2*pi - passband_angular_frequency:.2f}π", color='green', fontsize=7, ha='center', va='center')
+        ax.text(2*pi - stopband_angular_frequency, -0.15, f"{2*pi - stopband_angular_frequency:.2f}π", color='red', fontsize=7, ha='center', va='center')
+
+        # y axis
+        ax.text(-0.5, passband_magnitude, f"{passband_magnitude:.2f} = -1 dB", color='green', fontsize=7, ha='right', va='center')
+        ax.text(-0.5, stopband_magnitude, f"{stopband_magnitude:.2f} = -10 dB", color='red', fontsize=7, ha='right', va='center')
+
+    passband_rect_pos = patches.Rectangle(
+        (0, passband_magnitude),
+        passband_angular_frequency,
+        ax.get_ylim()[1] - passband_magnitude,
+        edgecolor='none', facecolor='lightgreen', alpha=0.5
+    )
+    passband_rect_neg = patches.Rectangle(
+        (2*pi - passband_angular_frequency, passband_magnitude),
+        passband_angular_frequency,
+        ax.get_ylim()[1] - passband_magnitude,
+        edgecolor='none', facecolor='lightgreen', alpha=0.5
+    )
+    ax.add_patch(passband_rect_pos)
+    ax.add_patch(passband_rect_neg)
+
+    stopband_rect = patches.Rectangle(
+        (stopband_angular_frequency, 0),
+        2*pi - 2*stopband_angular_frequency,
+        stopband_magnitude,
+        edgecolor='none', facecolor='lightcoral', alpha=0.5
+    )
+    ax.add_patch(stopband_rect)
 
     # Add some padding so that we can see the text
     ax.xaxis.labelpad = 20
@@ -147,7 +199,7 @@ def _plot_time(vals: list[complex128], window_name: str,
 
     ax.plot(x, real(vals[:res]), color="blue")
     ax.set_title(f"{label}: (Time) {window_name} Window size {L}")
-    ax.set_xlabel("Time Index")
+    ax.set_xlabel("Time Index [n]")
     ax.set_ylabel("Magnitude")
 
     ax.xaxis.labelpad = 20
@@ -236,9 +288,7 @@ for window, window_name in windows:
     mkdir(fig_save_location)
     fun_path = fig_save_location + "/fun"
     phase_path = fig_save_location + "/phase"
-    # phase_input_path = phase_path + "/input"
     phase_transferfunction_path = phase_path + "/transferfunction"
-    # phase_output_path = phase_path + "/output"
     freq_path = fig_save_location + "/freq"
     freq_input_path = freq_path + "/input"
     freq_transferfunction_path = freq_path + "/transferfunction"
@@ -248,9 +298,7 @@ for window, window_name in windows:
     time_output_path = time_path + "/output"
     mkdir(fun_path)
     mkdir(phase_path)
-    # mkdir(phase_input_path)
     mkdir(phase_transferfunction_path)
-    # mkdir(phase_output_path)
     mkdir(freq_path)
     mkdir(freq_input_path)
     mkdir(freq_transferfunction_path)
@@ -283,12 +331,10 @@ for window, window_name in windows:
 
             _plot_fun(w, h, window_name, fun_path, "Filter")
             _plot_phase(w, h, window_name, phase_transferfunction_path, "Filter")
-            # _plot_phase(w, freq_output_signal, window_name, phase_output_path, "Output")
-            # _plot_phase(w, freq_input_signal, window_name, phase_input_path, "Input")
             _plot_freq(w, freq_input_signal, window_name, freq_input_path,
                        "Input")
             _plot_freq(w, h, window_name, freq_transferfunction_path,
-                       "Filter")
+                       "Filter", lines=True)
             _plot_freq(w, freq_output_signal, window_name, freq_output_path,
                        "Output")
             _plot_time(time_input_signal, window_name, time_input_path, N//10,
