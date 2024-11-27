@@ -332,7 +332,7 @@ time_input_signal = [input_signal(n) for n in range(N)]
 freq_input_signal = fft(time_input_signal) / (N)
 
 
-_plot_freq(linspace(0., 2*pi, N), freq_input_signal, "", input_freq_path,
+_plot_freq(linspace(0., 2*pi, N, endpoint=False), freq_input_signal, "", input_freq_path,
            "Input")
 _plot_time_index(time_input_signal, "", input_time_index_path, N//10,
            "Input")
