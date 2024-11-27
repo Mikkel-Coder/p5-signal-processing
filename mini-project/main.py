@@ -26,9 +26,15 @@ MIN_L: int = 10
 # sample resolution
 N = 5120
 
-angular_frequencies = [
+angular_frequencies = [ # Discrete [radians/sample]
     pi/80,
-    3*pi/4
+    3*pi/4,
+]
+
+sample_frequencies = [ # [Hz]
+    1,
+    100,
+    1000,
 ]
 
 # Our input signal
@@ -87,7 +93,7 @@ def _plot_fun(w: list[float], h: list[complex128],
 
     ax.plot(w, abs(h), angle(h), color="red")
     ax.set_title(f"{label}: (FUN) {window_name} Window size {L}")
-    ax.set_xlabel("Discrete Angular Frequency [Radians/Samples]")
+    ax.set_xlabel("Discrete Angular Frequency [Radians/Sample]")
     ax.set_ylabel("Magnitude")
     ax.set_zlabel("Phase [Radians]")
     ax.set_xticks(freq_xaxis_ticks[::2], freq_xaxis_labels[::2])
@@ -101,7 +107,7 @@ def _plot_phase(w: list[float], h: list[complex128],
 
     ax.plot(w, angle(h), color="blue")
     ax.set_title(f"{label}: (Phase) {window_name} Window size {L}")
-    ax.set_xlabel("Discrete Angular Frequency [Radians/Samples]")
+    ax.set_xlabel("Discrete Angular Frequency [Radians/Sample]")
     ax.set_ylabel("Phase [Radians]")
     ax.set_xticks(freq_xaxis_ticks, freq_xaxis_labels)
 
@@ -121,7 +127,7 @@ def _plot_freq(w: list[float], h: list[complex128],
     # General plot configuring
     ax.plot(w, abs(h), color="blue")
     ax.set_title(f"{label}: (Frequency) {window_name} Window size {L}")
-    ax.set_xlabel("Discrete Angular Frequency [Radians/Samples]")
+    ax.set_xlabel("Discrete Angular Frequency [Radians/Sample]")
     ax.set_ylabel("Magnitude")
     ax.set_xticks(freq_xaxis_ticks, freq_xaxis_labels)
 
@@ -181,35 +187,55 @@ def _plot_freq(w: list[float], h: list[complex128],
     ax.xaxis.labelpad = 20
     ax.yaxis.labelpad = 20
 
-    # ax.legend()
     fig.tight_layout()
     fig.savefig(f"{path}/{L}.png")
     plt.close(fig)
 
-def _plot_time(vals: list[complex128], window_name: str,
+def _plot_time_index(vals: list[complex128], window_name: str,
                path: str, res: int, label: str) -> None:
     # Convert from frequency domain to time domain
     # We do that by using inverse DFT (by we use the optimized IDFT, IFFT)
 
     if(res > N):
-        raise Exception("Dont")
+        raise Exception("Too high resolution")
 
     x = linspace(0., 100., res)
     fig, ax = plt.subplots()
 
     ax.plot(x, real(vals[:res]), color="blue")
-    ax.set_title(f"{label}: (Time) {window_name} Window size {L}")
+    ax.set_title(f"{label}: (Discrete Time) {window_name} Window size {L}")
     ax.set_xlabel("Time Index [n]")
     ax.set_ylabel("Magnitude")
 
     ax.xaxis.labelpad = 20
     ax.yaxis.labelpad = 20
 
-    # ax.legend()
     fig.tight_layout()
     fig.savefig(f"{path}/{L}.png")
     plt.close(fig)
 
+def _plot_time_real(vals: list[complex128], window_name: str,
+                path_prefix: str, end_time: int, fs: int, label: str) -> None:
+    
+    res = end_time * fs
+
+    if(res > N):
+        raise Exception("Too high resolution")
+    
+    x = linspace(0., end_time, res)
+    fig, ax = plt.subplots()
+
+    ax.plot(x, real(vals[:res]), color="blue")
+    ax.set_title(f"{label}: (Time, fs: {fs}) {window_name} Window size {L}")
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Magnitude")
+
+    ax.xaxis.labelpad = 20
+    ax.yaxis.labelpad = 20
+
+    fig.tight_layout()
+    fig.savefig(f"{path_prefix}/{fs}/{L}.png")
+    plt.close(fig)
 
 def rectangular_window(L: int, n: int) -> int:
     """We use a window function to make the SINC function
@@ -294,8 +320,12 @@ for window, window_name in windows:
     freq_transferfunction_path = freq_path + "/transferfunction"
     freq_output_path = freq_path + "/output"
     time_path = fig_save_location + "/time"
-    time_input_path = time_path + "/input"
-    time_output_path = time_path + "/output"
+    time_index_path = time_path + "/index"
+    time_index_input_path = time_index_path + "/input"
+    time_index_output_path = time_index_path + "/output"
+    time_real_path = time_path + "/real"
+    time_real_input_path = time_real_path + "/input"
+    time_real_output_path = time_real_path + "/output"
     mkdir(fun_path)
     mkdir(phase_path)
     mkdir(phase_transferfunction_path)
@@ -304,8 +334,15 @@ for window, window_name in windows:
     mkdir(freq_transferfunction_path)
     mkdir(freq_output_path)
     mkdir(time_path)
-    mkdir(time_input_path)
-    mkdir(time_output_path)
+    mkdir(time_index_path)
+    mkdir(time_index_input_path)
+    mkdir(time_index_output_path)
+    mkdir(time_real_path)
+    mkdir(time_real_input_path)
+    mkdir(time_real_output_path)
+    for fs in sample_frequencies:
+        mkdir(time_real_input_path + f"/{fs}")
+        mkdir(time_real_output_path + f"/{fs}")
 
     for L in range(MIN_L, MAX_L+1, 2):
         filter_coefficients = []
@@ -337,7 +374,12 @@ for window, window_name in windows:
                        "Filter", lines=True)
             _plot_freq(w, freq_output_signal, window_name, freq_output_path,
                        "Output")
-            _plot_time(time_input_signal, window_name, time_input_path, N//10,
+            _plot_time_index(time_input_signal, window_name, time_index_input_path, N//10,
                        "Input")
-            _plot_time(time_output_signal, window_name, time_output_path, N//10,
+            _plot_time_index(time_output_signal, window_name, time_index_output_path, N//10,
                        "Output")
+            for fs in sample_frequencies:
+                _plot_time_real(time_input_signal, window_name, time_real_input_path, 5, fs,
+                           "Input")
+                _plot_time_real(time_output_signal, window_name, time_real_output_path, 5, fs,
+                           "Output")
