@@ -103,6 +103,7 @@ def _plot_phase(w: list[float], h: list[complex128],
     ax.set_title(f"{label}: (Phase) {window_name} Window size {L}")
     ax.set_xlabel("Angular Frequency")
     ax.set_ylabel("Phase")
+    ax.set_xticks(freq_xaxis_ticks, freq_xaxis_labels)
 
     ax.xaxis.labelpad = 20
     ax.yaxis.labelpad = 20
