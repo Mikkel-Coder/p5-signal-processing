@@ -154,28 +154,28 @@ def _plot_freq(w: list[float], h: list[complex128],
         ax.text(-0.5, passband_magnitude, f"{passband_magnitude:.2f} = -1 dB", color='green', fontsize=7, ha='right', va='center')
         ax.text(-0.5, stopband_magnitude, f"{stopband_magnitude:.2f} = -10 dB", color='red', fontsize=7, ha='right', va='center')
 
-    passband_rect_pos = patches.Rectangle(
-        (0, passband_magnitude),
-        passband_angular_frequency,
-        ax.get_ylim()[1] - passband_magnitude,
-        edgecolor='none', facecolor='lightgreen', alpha=0.5
-    )
-    passband_rect_neg = patches.Rectangle(
-        (2*pi - passband_angular_frequency, passband_magnitude),
-        passband_angular_frequency,
-        ax.get_ylim()[1] - passband_magnitude,
-        edgecolor='none', facecolor='lightgreen', alpha=0.5
-    )
-    ax.add_patch(passband_rect_pos)
-    ax.add_patch(passband_rect_neg)
+        passband_rect_pos = patches.Rectangle(
+            (0, passband_magnitude),
+            passband_angular_frequency,
+            ax.get_ylim()[1] - passband_magnitude,
+            edgecolor='none', facecolor='lightgreen', alpha=0.5
+        )
+        passband_rect_neg = patches.Rectangle(
+            (2*pi - passband_angular_frequency, passband_magnitude),
+            passband_angular_frequency,
+            ax.get_ylim()[1] - passband_magnitude,
+            edgecolor='none', facecolor='lightgreen', alpha=0.5
+        )
+        ax.add_patch(passband_rect_pos)
+        ax.add_patch(passband_rect_neg)
 
-    stopband_rect = patches.Rectangle(
-        (stopband_angular_frequency, 0),
-        2*pi - 2*stopband_angular_frequency,
-        stopband_magnitude,
-        edgecolor='none', facecolor='lightcoral', alpha=0.5
-    )
-    ax.add_patch(stopband_rect)
+        stopband_rect = patches.Rectangle(
+            (stopband_angular_frequency, 0),
+            2*pi - 2*stopband_angular_frequency,
+            stopband_magnitude,
+            edgecolor='none', facecolor='lightcoral', alpha=0.5
+        )
+        ax.add_patch(stopband_rect)
 
     # Add some padding so that we can see the text
     ax.xaxis.labelpad = 20
