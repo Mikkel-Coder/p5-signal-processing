@@ -1,7 +1,7 @@
 from typing import Callable
 from scipy import signal
 from math import pi, sin, cos
-from numpy import abs, float64, complex128, linspace, real, imag
+from numpy import abs, angle, float64, complex128, linspace, real
 from numpy.fft import fft, ifft
 from os import mkdir
 import matplotlib.pyplot as plt
@@ -76,27 +76,30 @@ def _find_magnitude_at_angular_frequency(
         previous_angular_frequency = current_angular_frequency
         previous_magnitude = current_magnitude
 
+freq_xaxis_ticks = [0., pi/4, pi/2, 3*pi/4, pi, 5*pi/4, 3*pi/2, 7*pi/4, 2*pi]
+freq_xaxis_labels = ['0', 'π/4', 'π/2', '3π/4', 'π', '5π/4', '3π/2', '7π/4', '2π']
+
+
 def _plot_fun(w: list[float], h: list[complex128],
               window_name: str, path: str, label: str) -> None:
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
 
-    ax.plot(w, abs(real(h)), imag(h), color="red")
+    ax.plot(w, abs(h), angle(h), color="red")
     ax.set_title(f"{label}: (FUN) {window_name} Window size {L}")
     ax.set_xlabel("Angular Frequency")
     ax.set_ylabel("Magnitude")
     ax.set_zlabel("Phase")
+    ax.set_xticks(freq_xaxis_ticks, freq_xaxis_labels)
 
     fig.savefig(f"{path}/{L}.png")
     plt.close(fig)
-
-    
 
 def _plot_phase(w: list[float], h: list[complex128],
                 window_name: str, path: str, label: str) -> None:
     fig, ax = plt.subplots()
 
-    ax.plot(w, h, color="blue")
+    ax.plot(w, angle(h), color="blue")
     ax.set_title(f"{label}: (Phase) {window_name} Window size {L}")
     ax.set_xlabel("Angular Frequency")
     ax.set_ylabel("Phase")
@@ -119,7 +122,7 @@ def _plot_freq(w: list[float], h: list[complex128],
     ax.set_title(f"{label}: (Frequency) {window_name} Window size {L}")
     ax.set_xlabel("Angular Frequency")
     ax.set_ylabel("Magnitude")
-    
+    ax.set_xticks(freq_xaxis_ticks, freq_xaxis_labels)
 
     # Add some padding so that we can see the text
     ax.xaxis.labelpad = 20
@@ -143,7 +146,7 @@ def _plot_time(vals: list[complex128], window_name: str,
 
     ax.plot(x, real(vals[:res]), color="blue")
     ax.set_title(f"{label}: (Time) {window_name} Window size {L}")
-    ax.set_xlabel("Time")
+    ax.set_xlabel("Time Index")
     ax.set_ylabel("Magnitude")
 
     ax.xaxis.labelpad = 20
@@ -278,7 +281,7 @@ for window, window_name in windows:
             time_output_signal = ifft(freq_output_signal) * (N)
 
             _plot_fun(w, h, window_name, fun_path, "Filter")
-            _plot_phase(w, imag(h), window_name, phase_transferfunction_path, "Filter")
+            _plot_phase(w, h, window_name, phase_transferfunction_path, "Filter")
             # _plot_phase(w, freq_output_signal, window_name, phase_output_path, "Output")
             # _plot_phase(w, freq_input_signal, window_name, phase_input_path, "Input")
             _plot_freq(w, freq_input_signal, window_name, freq_input_path,
