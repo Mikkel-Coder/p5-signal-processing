@@ -1,8 +1,8 @@
 from typing import Callable
 from scipy import signal
 from math import pi, sin, cos
-from numpy import abs, float64, complex128
-from numpy.fft import fft
+from numpy import abs, float64, complex128, linspace
+from numpy.fft import fft, ifft
 from os import mkdir
 import matplotlib.pyplot as plt
 # import matplotlib.patches as patches
@@ -23,12 +23,8 @@ stopband_magnitude: float = 10**(-1/2)
 MAX_L: int = 100
 MIN_L: int = 10
 
-# Our sample period
-sample_period: float = 1/8000
-
 # sample resolution
-N = 51200
-
+N = 5120
 
 # Our input signal
 def input_signal(n: int):
@@ -78,8 +74,8 @@ def _plot_freq(w: list[float], h: list[complex128],
     fig, ax = plt.subplots()
 
     # General plot configuring
-    ax.plot(w, abs(h), color="blue", label=label)
-    ax.set_title(f"LP-FIR filter using {window_name} Window with size L: {L}")
+    ax.plot(w, abs(h), color="blue")
+    ax.set_title(f"LP-FIR filter using {window_name} Window with size L: {L} ({label} in frequency)")
     ax.set_xlabel("Angular Frequency")
     ax.set_ylabel("Magnitude")
 
@@ -87,25 +83,34 @@ def _plot_freq(w: list[float], h: list[complex128],
     ax.xaxis.labelpad = 20
     ax.yaxis.labelpad = 20
 
-    ax.legend()
+    # ax.legend()
     fig.tight_layout()
     fig.savefig(f"{path}/{L}.png")
     plt.close(fig)
 
-# def _plot_time(h: list[complex128], window_name: str):
-#     """Please make this work later"""
-#     # Convert from frequency domain to time domain
-#     # We do that by using inverse DFT (by we use the optimized IDFT, IFFT)
-#     y = ifft(h)
-#     x = [i*sample_period for i in range(len(y))]
-#     fig, ax = plt.subplots()
-#
-#     ax.plot(x, abs(y))
-#
-#     #ax.legend()
-#     fig.tight_layout()
-#     fig.savefig(f"./figures/{window_name}/{L}.png")
-#     plt.close(fig)
+def _plot_time(vals: list[complex128], window_name: str, path: str, res: int, label: str):
+    """Please make this work later"""
+    # Convert from frequency domain to time domain
+    # We do that by using inverse DFT (by we use the optimized IDFT, IFFT)
+
+    if(res > N):
+        raise Exception("Dont")
+
+    x = linspace(0., 100., res)
+    fig, ax = plt.subplots()
+
+    ax.plot(x, abs(vals[:res]), color="blue")
+    ax.set_title(f"LP-FIR filter using {window_name} Window with size L: {L} ({label} in time)")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Magnitude")
+
+    ax.xaxis.labelpad = 20
+    ax.yaxis.labelpad = 20
+
+    # ax.legend()
+    fig.tight_layout()
+    fig.savefig(f"{path}/{L}.png")
+    plt.close(fig)
 
 
 def rectangular_window(L: int, n: int) -> int:
@@ -184,13 +189,19 @@ for window, window_name in windows:
     fig_save_location = f"{figures}/{window_name}"
     mkdir(fig_save_location)
     freq_path = fig_save_location + "/freq"
-    freq_input_path = freq_path+"/input"
-    freq_transferfunction_path = freq_path+"/transferfunction"
-    freq_output_path = freq_path+"/output"
+    freq_input_path = freq_path + "/input"
+    freq_transferfunction_path = freq_path + "/transferfunction"
+    freq_output_path = freq_path + "/output"
+    time_path = fig_save_location + "/time"
+    time_input_path = time_path + "/input"
+    time_output_path = time_path + "/output"
     mkdir(freq_path)
     mkdir(freq_input_path)
     mkdir(freq_transferfunction_path)
     mkdir(freq_output_path)
+    mkdir(time_path)
+    mkdir(time_input_path)
+    mkdir(time_output_path)
 
     for L in range(MIN_L, MAX_L+1, 2):
         filter_coefficients = []
@@ -204,15 +215,23 @@ for window, window_name in windows:
                                                     w, h)
         low = _find_magnitude_at_angular_frequency(stopband_angular_frequency,
                                                    w, h)
-
-        # Påtryk vores signal via vores overføringsfunktion
-        freq_output_signal = [a*b for a, b in zip(freq_input_signal, h)]
-
+        
         if high > passband_magnitude and low < stopband_magnitude:
             print(f"[{window_name=}] We found a good value for L: {L}")
-            _plot_freq(w, freq_input_signal,
-                       window_name, freq_input_path, "Input frequencies")
+
+            # Påtryk vores signal via vores overføringsfunktion
+            freq_output_signal = [a*b for a, b in zip(freq_input_signal, h)]
+
+            # Find timedomain of output
+            time_output_signal = ifft(freq_output_signal)
+
+            _plot_freq(w, freq_input_signal, window_name, freq_input_path,
+                       "Input")
             _plot_freq(w, h, window_name, freq_transferfunction_path,
-                       "Angular Frequency Response")
-            _plot_freq(w, freq_output_signal,
-                       window_name, freq_output_path, "Filter output frequencies")
+                       "Filter")
+            _plot_freq(w, freq_output_signal, window_name, freq_output_path,
+                       "Output")
+            _plot_time(time_input_signal, window_name, time_input_path, N//100,
+                       "Input")
+            _plot_time(time_output_signal, window_name, time_output_path, N//100,
+                       "Output")
