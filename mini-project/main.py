@@ -115,7 +115,8 @@ plot_time_real_with_zoom(
     window_name="",
     path=input_time_index_path,
     res=N // 100,
-    title="Indgangs signalet x[n] i Diskret Tidsdomænet [Zoomet ind med *100]",
+    title="Indgangs signalet x[n] i Diskret Tidsdomænet \n"
+          "[Zoomet ind med *100]",
 )
 for sf in sample_frequencies:
     plot_time_real(
@@ -123,7 +124,8 @@ for sf in sample_frequencies:
         window_name="",
         path_prefix=input_time_real_path,
         sf=sf,
-        title="Indgangs signalet x[n] i Diskret Tidsdomænet [Zoomet ind med *10]"
+        title="Indgangs signalet x[n] i Diskret Tidsdomænet \n" 
+              "[Zoomet ind med *10]"
     )
 
 # Now we want to examen each window in freq, phase and time
