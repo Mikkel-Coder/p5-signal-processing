@@ -277,6 +277,7 @@ for window, window_name in windows:
                    sf=sf,
                    end_time=end_time,
                    title="Output signalet y[n] i Tidsdomænet \n"
+                         f"med Vinduet: {window_name} og længde: {L}. \n"
                          f"[Sample frekvens {sf}]",
                    L=L,
                )
