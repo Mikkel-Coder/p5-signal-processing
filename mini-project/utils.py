@@ -69,7 +69,7 @@ def plot_fun(
     ax.set_zlabel("Phase [Radians]")
     ax.set_xticks(freq_xaxis_ticks[::2], freq_xaxis_labels[::2])
 
-    fig.savefig(f"{path}/{L}.png")
+    fig.savefig(f"{path}/{L}.svg")
     plt.close(fig)
 
 def plot_phase(
@@ -92,7 +92,7 @@ def plot_phase(
     ax.yaxis.labelpad = 20
 
     fig.tight_layout()
-    fig.savefig(f"{path}/{L}.png")
+    fig.savefig(f"{path}/{L}.svg")
     plt.close(fig)
 
 def plot_freq(
@@ -171,7 +171,7 @@ def plot_freq(
     ax.yaxis.labelpad = 20
 
     fig.tight_layout()
-    fig.savefig(f"{path}/{L}.png")
+    fig.savefig(f"{path}/{L}.svg")
     plt.close(fig)
 
 
@@ -197,7 +197,7 @@ def plot_time_index(
     ax.yaxis.labelpad = 20
 
     fig.tight_layout()
-    fig.savefig(f"{path}/{L}.png")
+    fig.savefig(f"{path}/{L}.svg")
     plt.close(fig)
 
 
@@ -215,20 +215,20 @@ def plot_time_secs(
     res = end_time * sf
 
     # Make our x axsis based on our samples
-    x = linspace(0., res, res)
+    x = linspace(0., sf, res)
     fig, ax = plt.subplots()
 
     # Only plot the values in the resolution "window"
     ax.plot(x, real(vals[:res]), color="blue")
     ax.set_title(title)
-    ax.set_xlabel("Tid [Seconds]")
+    ax.set_xlabel("Tid [Sekunder]")
     ax.set_ylabel("Magnitude")
 
     ax.xaxis.labelpad = 20
     ax.yaxis.labelpad = 20
 
     fig.tight_layout()
-    fig.savefig(f"{path_prefix}/{sf}/{L}.png")
+    fig.savefig(f"{path_prefix}/{sf}/{L}.svg")
     plt.close(fig)
 
 
