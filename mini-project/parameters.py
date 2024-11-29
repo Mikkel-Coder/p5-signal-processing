@@ -19,7 +19,7 @@ MIN_L: int = 10
 
 # Sample resolution
 # So the number of samples in the range [0,2pi)
-N = 8000
+N = 5120
 
 # Discrete angular frequencies that 
 # our input signal contains measured in 
@@ -35,8 +35,13 @@ angular_frequencies = [
 # Our discrete sample period
 # [Hz]
 sample_frequencies = [
-   8000,
-   # 100, # If time we should perhaps try this  
-   # 1000,
-   # 10000,
+    10,
+    20,
+    50,
+    100,
+    200,
+    500,
 ]
+
+# The amount of secs to plot for
+end_time = 10

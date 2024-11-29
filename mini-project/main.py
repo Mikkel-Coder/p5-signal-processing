@@ -3,8 +3,27 @@ from math import pi, sin, cos
 from numpy import linspace
 from numpy.fft import fft, ifft
 from scipy.signal import freqz
-from utils import *
-from parameters import *
+from utils import (
+    find_magnitude_at_angular_frequency,
+    plot_fun,
+    plot_phase,
+    plot_freq,
+    plot_time_index,
+    plot_time_secs,
+)
+from parameters import (
+    angular_frequencies,
+    cutoff_angular_frequency,
+    sample_frequencies,
+    passband_angular_frequency,
+    stopband_angular_frequency,
+    passband_magnitude,
+    stopband_magnitude,
+    MAX_L,
+    MIN_L,
+    N,
+    end_time,
+)
 
 
 def input_signal(n: int):
@@ -88,13 +107,13 @@ mkdir(input_path)
 input_freq_path = input_path + "/freq"
 input_time_path = input_path + "/time"
 input_time_index_path = input_time_path + "/index"
-input_time_real_path = input_time_path + "/real"
+input_time_secs_path = input_time_path + "/secs"
 mkdir(input_freq_path)
 mkdir(input_time_path)
 mkdir(input_time_index_path)
-mkdir(input_time_real_path)
+mkdir(input_time_secs_path)
 for sf in sample_frequencies:
-    mkdir(input_time_real_path + f"/{sf}")
+    mkdir(input_time_secs_path + f"/{sf}")
 
 # We prefer to work in the frequency domain, so we must first
 # convert out input signal in the time domain to freq domain
@@ -106,26 +125,24 @@ freq_input_signal = fft(time_input_signal) / (N)
 plot_freq(
     w=linspace(0.0, 2 * pi, N, endpoint=False),
     h=freq_input_signal,
-    window_name="",
     path=input_freq_path,
     title="Indgangs signalet x[n] i Diskret Frekvensdomænet"
 )
-plot_time_real_with_zoom(
+plot_time_index(
     vals=time_input_signal,
-    window_name="",
     path=input_time_index_path,
     res=N // 100,
     title="Indgangs signalet x[n] i Diskret Tidsdomænet \n"
           "[Zoomet ind med *100]",
 )
 for sf in sample_frequencies:
-    plot_time_real(
+    plot_time_secs(
         vals=time_input_signal,
-        window_name="",
-        path_prefix=input_time_real_path,
+        path_prefix=input_time_secs_path,
         sf=sf,
-        title="Indgangs signalet x[n] i Diskret Tidsdomænet \n" 
-              "[Zoomet ind med *10]"
+        end_time=end_time,
+        title="Indgangs signalet x[n] i Tidsdomænet \n"
+              f"[Sample frekvens {sf}]"
     )
 
 # Now we want to examen each window in freq, phase and time
@@ -143,8 +160,8 @@ for window, window_name in windows:
     window_time_path = window_path + "/time"
     window_time_index_path = window_time_path + "/index"
     window_time_index_output_path = window_time_index_path + "/output"
-    window_time_real_path = window_time_path + "/real"
-    window_time_real_output_path = window_time_real_path + "/output"
+    window_time_secs_path = window_time_path + "/secs"
+    window_time_secs_output_path = window_time_secs_path + "/output"
     mkdir(window_fun_path)
     mkdir(window_phase_path)
     mkdir(window_phase_transferfunction_path)
@@ -154,10 +171,10 @@ for window, window_name in windows:
     mkdir(window_time_path)
     mkdir(window_time_index_path)
     mkdir(window_time_index_output_path)
-    mkdir(window_time_real_path)
-    mkdir(window_time_real_output_path)
+    mkdir(window_time_secs_path)
+    mkdir(window_time_secs_output_path)
     for sf in sample_frequencies:
-        mkdir(window_time_real_output_path + f"/{sf}")
+        mkdir(window_time_secs_output_path + f"/{sf}")
 
     # For each different window, we want to examen with "trail and error" want the good lengths (L) are for the windows
     # Note that our SINC (so the rectangular window) does not work for odd numbers. sorry
@@ -215,7 +232,6 @@ for window, window_name in windows:
             plot_phase(
                 w=w, 
                 h=h, 
-                window_name=window_name, 
                 path=window_phase_transferfunction_path, 
                 title=  "LP-FIR filter Fase Respons \n"
                        f"med Vinduet: {window_name} og længde: {L}", 
@@ -226,7 +242,6 @@ for window, window_name in windows:
             plot_freq(
                 w=w,
                 h=h,
-                window_name=window_name,
                 path=window_freq_transferfunction_path,
                 title=  "LP-FIR filter Magnitude Respons \n"
                        f"med Vinduet: {window_name} og længde: {L}",
@@ -238,7 +253,6 @@ for window, window_name in windows:
             plot_freq(
                 w=w, 
                 h=freq_output_signal, 
-                window_name=window_name, 
                 path=window_freq_output_path,
                 L=L,
                 title=  "Udgangs signalet y[n] i Diskret Tidsdomænet \n" 
@@ -246,9 +260,8 @@ for window, window_name in windows:
             )
 
             # Plot in the time domain (not that useful)
-            plot_time_real_with_zoom(
+            plot_time_index(
                 time_output_signal,
-                window_name,
                 window_time_index_output_path,
                 N // 10,
                 title=  "Udgangs signalet y[n] i Diskret Tidsdomænet \n" 
@@ -257,13 +270,13 @@ for window, window_name in windows:
                 L=L,
             )
 
-            # Not very useful. Perhaps ignore
-            #for sf in sample_frequencies:
-            #    plot_time_real(
-            #        time_output_signal,
-            #        window_name,
-            #        window_time_real_output_path,
-            #        sf,
-            #        "Output signalet y[n] i Diskret Tidsdomænet [Zoomnet ind med *10]",
-            #        L=L,
-            #    )
+            for sf in sample_frequencies:
+               plot_time_secs(
+                   time_output_signal,
+                   path_prefix=window_time_secs_output_path,
+                   sf=sf,
+                   end_time=end_time,
+                   title="Output signalet y[n] i Tidsdomænet \n"
+                         f"[Sample frekvens {sf}]",
+                   L=L,
+               )

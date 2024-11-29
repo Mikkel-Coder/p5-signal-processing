@@ -2,7 +2,13 @@ from numpy import abs, angle, float64, complex128, linspace, real
 from math import pi, sin, cos
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from parameters import *
+from parameters import (
+    cutoff_angular_frequency,
+    passband_angular_frequency,
+    stopband_angular_frequency,
+    passband_magnitude,
+    stopband_magnitude,
+)
 
 freq_xaxis_ticks = [0., pi/4, pi/2, 3*pi/4, pi, 5*pi/4, 3*pi/2, 7*pi/4, 2*pi]
 freq_xaxis_labels = ['0', 'π/4', 'π/2', '3π/4', 'π', '5π/4', '3π/2', '7π/4', '2π']
@@ -69,7 +75,6 @@ def plot_fun(
 def plot_phase(
         w: list[float],
         h: list[complex128],
-        window_name: str,
         path: str,
         title: str,
         L
@@ -93,7 +98,6 @@ def plot_phase(
 def plot_freq(
         w: list[float], 
         h: list[complex128],
-        window_name: str,
         path: str,
         title: str,
         L: int = 0,
@@ -171,9 +175,8 @@ def plot_freq(
     plt.close(fig)
 
 
-def plot_time_real_with_zoom(
+def plot_time_index(
         vals: list[complex128],
-        window_name: str,
         path: str,
         res: int, 
         title: str,
@@ -198,26 +201,27 @@ def plot_time_real_with_zoom(
     plt.close(fig)
 
 
-def plot_time_real(
+def plot_time_secs(
         vals: list[complex128], 
-        window_name: str,
         path_prefix: str, 
-        sf: int, 
+        sf: int,
+        end_time: int, 
         title: str,
         L: int = 0
         ) -> None:
-    
-    # so that it is easier to see, we zoom in by:
-    fs_new = sf//10
+
+    # Calculate the resolution needed (num of samples)
+    # (s * sample Hz = samples)
+    res = end_time * sf
 
     # Make our x axsis based on our samples
-    x = linspace(0., fs_new, fs_new)
+    x = linspace(0., res, res)
     fig, ax = plt.subplots()
 
     # Only plot the values in the resolution "window"
-    ax.plot(x, real(vals[:fs_new]), color="blue")
+    ax.plot(x, real(vals[:res]), color="blue")
     ax.set_title(title)
-    ax.set_xlabel("Tid [SampleIndex]")
+    ax.set_xlabel("Tid [Seconds]")
     ax.set_ylabel("Magnitude")
 
     ax.xaxis.labelpad = 20
