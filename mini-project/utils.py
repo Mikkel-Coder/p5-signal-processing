@@ -215,7 +215,7 @@ def plot_time_secs(
     res = end_time * sf
 
     # Make our x axsis based on our samples
-    x = linspace(0., sf, res)
+    x = linspace(0., end_time, res)
     fig, ax = plt.subplots()
 
     # Only plot the values in the resolution "window"
